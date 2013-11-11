@@ -51,13 +51,15 @@ public class ESHiveOutputFormat extends ESOutputFormat implements
 
 			if (w instanceof HiveEntityWritable) {
 				HiveEntityWritable hew = ((HiveEntityWritable) w);
+vvvvvvvvvvvvvvvvvvvv
 				log.info("hew.bytes = " + hew.getBytes() + "len="
 					 + hew.getLength() + "hew.getId() = " + hew.getId());
+^^^^^^^^^^^^^^^^^^^^
 				client.writeToIndex(hew.getBytes(), hew.getLength(),
 						hew.getId());
 			} else {
 				throw new IllegalArgumentException(String.format(
-						"Unexpected type;expected [%s],received [%s]",
+						"Unexpected type; expected [%s], received [%s]",
 						HiveEntityWritable.class, w));
 			}
 		}
