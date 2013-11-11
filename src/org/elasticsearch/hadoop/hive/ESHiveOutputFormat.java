@@ -51,8 +51,13 @@ public class ESHiveOutputFormat extends ESOutputFormat implements
 
 			if (w instanceof HiveEntityWritable) {
 				HiveEntityWritable hew = ((HiveEntityWritable) w);
+<<<<<<< HEAD
 				log.info("hew.bytes = " + hew.getBytes() + "len="
 					 + hew.getLength() + "hew.getId() = " + hew.getId());
+=======
+				log.info("hew.bytes = " + hew.getBytes() + " , len="
+						+ hew.getLength() + ", hew.getId() = " + hew.getId());
+>>>>>>> 736c24cfac960e725c3fc1226544b92db0697fd7
 				client.writeToIndex(hew.getBytes(), hew.getLength(),
 						hew.getId());
 			} else {
