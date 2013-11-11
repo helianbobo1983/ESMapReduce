@@ -97,6 +97,8 @@ public class ESStorageHandler extends DefaultStorageHandler {
 		Logger.getRootLogger().addAppender(fa);
 		Settings settings = SettingsManager.loadFrom(cfg)
 				.merge(tableDesc.getProperties()).clean();
+		
+		
 
 		// NB: ESSerDe is already initialized at this stage
 		// NB: the value writer is not needed by Hive but it's set for
