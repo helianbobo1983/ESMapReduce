@@ -18,6 +18,9 @@ package org.elasticsearch.hadoop.cfg;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.hive.ESStorageHandler;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -30,6 +33,8 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
  * undefined, optional settings.
  */
 public abstract class Settings implements InternalConfigurationOptions {
+
+	private static Log log = LogFactory.getLog(Settings.class);
 
 	private String host;
 	private int port;
@@ -196,6 +201,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 			if (prop instanceof String) {
 				Object value = properties.get(prop);
 				setProperty((String) prop, value.toString());
+				log.info("key = " + prop + ", value= " + value.toString());
 			}
 		}
 

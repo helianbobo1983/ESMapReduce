@@ -26,6 +26,10 @@ import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
@@ -82,6 +86,15 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
 	private void init(TableDesc tableDesc) {
 		Configuration cfg = getConf();
+		FileAppender fa = new FileAppender();
+		fa.setName("FileLogger");
+		fa.setFile("/tmp/hive.log");
+		fa.setLayout(new PatternLayout("%d %-5p [%c{1}] %m%n"));
+		fa.setThreshold(Level.INFO);
+		fa.setAppend(true);
+		fa.activateOptions();
+		// Logger.getRootLogger().getLoggerRepository().resetConfiguration();
+		Logger.getRootLogger().addAppender(fa);
 		Settings settings = SettingsManager.loadFrom(cfg)
 				.merge(tableDesc.getProperties()).clean();
 

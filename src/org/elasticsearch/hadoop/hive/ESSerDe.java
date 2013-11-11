@@ -51,148 +51,158 @@ import org.elasticsearch.hadoop.util.StringUtils;
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
 
-    private Properties tableProperties;
+	private Properties tableProperties;
 
-    private StructObjectInspector inspector;
+	private StructObjectInspector inspector;
 
-    // serialization artifacts
-    private BytesArray scratchPad = new BytesArray(512);
-    private ValueWriter<HiveType> valueWriter;
-    private HiveType hiveType = new HiveType(null, null);
-    private HiveEntityWritable result = new HiveEntityWritable();
-    private StructTypeInfo structTypeInfo;
-    private FieldAlias alias;
-    private IdExtractor idExtractor;
+	// serialization artifacts
+	private BytesArray scratchPad = new BytesArray(512);
+	private ValueWriter<HiveType> valueWriter;
+	private HiveType hiveType = new HiveType(null, null);
+	private HiveEntityWritable result = new HiveEntityWritable();
+	private StructTypeInfo structTypeInfo;
+	private FieldAlias alias;
+	private IdExtractor idExtractor;
 
-    private boolean writeInitialized = false;
+	private boolean writeInitialized = false;
 
-    @Override
-    public void initialize(Configuration conf, Properties tbl) throws SerDeException {
-        inspector = HiveUtils.structObjectInspector(tbl);
-        structTypeInfo = HiveUtils.typeInfo(inspector);
-        alias = HiveUtils.alias(tbl);
+	@Override
+	public void initialize(Configuration conf, Properties tbl)
+			throws SerDeException {
+		inspector = HiveUtils.structObjectInspector(tbl);
+		structTypeInfo = HiveUtils.typeInfo(inspector);
+		alias = HiveUtils.alias(tbl);
+		this.tableProperties = tbl;
+	}
 
-        this.tableProperties = tbl;
-    }
+	@Override
+	public Object deserialize(Writable blob) throws SerDeException {
+		if (blob == null || blob instanceof NullWritable) {
+			return null;
+		}
 
-    @Override
-    public Object deserialize(Writable blob) throws SerDeException {
-        if (blob == null || blob instanceof NullWritable) {
-            return null;
-        }
+		return hiveFromWritable(structTypeInfo, blob, alias);
+	}
 
-        return hiveFromWritable(structTypeInfo, blob, alias);
-    }
+	@Override
+	public ObjectInspector getObjectInspector() throws SerDeException {
+		return inspector;
+	}
 
-    @Override
-    public ObjectInspector getObjectInspector() throws SerDeException {
-        return inspector;
-    }
+	@Override
+	public SerDeStats getSerDeStats() {
+		// TODO: stats not yet supported (seems quite the trend for SerDe)
+		return null;
+	}
 
-    @Override
-    public SerDeStats getSerDeStats() {
-        // TODO: stats not yet supported (seems quite the trend for SerDe)
-        return null;
-    }
+	@Override
+	public Class<? extends Writable> getSerializedClass() {
+		return HiveEntityWritable.class;
+	}
 
-    @Override
-    public Class<? extends Writable> getSerializedClass() {
-        return HiveEntityWritable.class;
-    }
+	@Override
+	public Writable serialize(Object data, ObjectInspector objInspector)
+			throws SerDeException {
+		lazyInitializeWrite();
 
-    @Override
-    public Writable serialize(Object data, ObjectInspector objInspector) throws SerDeException {
-        lazyInitializeWrite();
+		// serialize the type directly to json (to avoid converting to Writable
+		// and then serializing)
+		scratchPad.reset();
+		FastByteArrayOutputStream bos = new FastByteArrayOutputStream(
+				scratchPad);
 
-        // serialize the type directly to json (to avoid converting to Writable and then serializing)
-        scratchPad.reset();
-        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
+		hiveType.setObjectInspector(objInspector);
+		hiveType.setObject(data);
+		ContentBuilder.generate(bos, valueWriter).value(hiveType).flush()
+				.close();
 
-        hiveType.setObjectInspector(objInspector);
-        hiveType.setObject(data);
-        ContentBuilder.generate(bos, valueWriter).value(hiveType).flush().close();
+		result.setContent(scratchPad.bytes(), scratchPad.size());
+		if (idExtractor != null) {
+			String id = idExtractor.id(hiveType);
+			result.setId(id.getBytes(StringUtils.UTF_8));
+		}
+		return result;
+	}
 
-        result.setContent(scratchPad.bytes(), scratchPad.size());
-        if (idExtractor != null) {
-            String id = idExtractor.id(hiveType);
-            result.setId(id.getBytes(StringUtils.UTF_8));
-        }
-        return result;
-    }
+	private void lazyInitializeWrite() {
+		if (writeInitialized) {
+			return;
+		}
+		writeInitialized = true;
+		Settings settings = SettingsManager.loadFrom(tableProperties);
+		// TODO: externalize
+		valueWriter = new HiveValueWriter(alias);
+		InitializationUtils.setIdExtractorIfNotSet(settings,
+				HiveIdExtractor.class, null);
 
-    private void lazyInitializeWrite() {
-        if (writeInitialized) {
-            return;
-        }
-        writeInitialized = true;
-        Settings settings = SettingsManager.loadFrom(tableProperties);
-        // TODO: externalize
-        valueWriter = new HiveValueWriter(alias);
-        InitializationUtils.setIdExtractorIfNotSet(settings, HiveIdExtractor.class, null);
+		idExtractor = (StringUtils.hasText(settings.getMappingId()) ? ObjectUtils
+				.<IdExtractor> instantiate(
+						settings.getMappingIdExtractorClassName(), settings)
+				: null);
+	}
 
-        idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
-                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
-    }
+	static Object hiveFromWritable(TypeInfo type, Writable data,
+			FieldAlias alias) {
+		if (data == null || data instanceof NullWritable) {
+			return null;
+		}
 
+		switch (type.getCategory()) {
+		case LIST: {// or ARRAY
+			ListTypeInfo listType = (ListTypeInfo) type;
+			TypeInfo listElementType = listType.getListElementTypeInfo();
 
-    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
-        if (data == null || data instanceof NullWritable) {
-            return null;
-        }
+			ArrayWritable aw = (ArrayWritable) data;
 
-        switch (type.getCategory()) {
-        case LIST: {// or ARRAY
-            ListTypeInfo listType = (ListTypeInfo) type;
-            TypeInfo listElementType = listType.getListElementTypeInfo();
+			List<Object> list = new ArrayList<Object>();
+			for (Writable writable : aw.get()) {
+				list.add(hiveFromWritable(listElementType, writable, alias));
+			}
 
-            ArrayWritable aw = (ArrayWritable) data;
+			return list;
+		}
 
-            List<Object> list = new ArrayList<Object>();
-            for (Writable writable : aw.get()) {
-                list.add(hiveFromWritable(listElementType, writable, alias));
-            }
+		case MAP: {
+			MapTypeInfo mapType = (MapTypeInfo) type;
+			MapWritable mw = (MapWritable) data;
 
-            return list;
-        }
+			Map<Object, Object> map = new LinkedHashMap<Object, Object>();
 
-        case MAP: {
-            MapTypeInfo mapType = (MapTypeInfo) type;
-            MapWritable mw = (MapWritable) data;
+			for (Entry<Writable, Writable> entry : mw.entrySet()) {
+				map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(),
+						entry.getKey(), alias),
+						hiveFromWritable(mapType.getMapValueTypeInfo(),
+								entry.getValue(), alias));
+			}
 
-            Map<Object, Object> map = new LinkedHashMap<Object, Object>();
+			return map;
+		}
+		case STRUCT: {
+			StructTypeInfo structType = (StructTypeInfo) type;
+			List<String> names = structType.getAllStructFieldNames();
+			List<TypeInfo> info = structType.getAllStructFieldTypeInfos();
 
-            for (Entry<Writable, Writable> entry : mw.entrySet()) {
-                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias),
-                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias));
-            }
+			// return just the values
+			List<Object> struct = new ArrayList<Object>();
 
-            return map;
-        }
-        case STRUCT: {
-            StructTypeInfo structType = (StructTypeInfo) type;
-            List<String> names = structType.getAllStructFieldNames();
-            List<TypeInfo> info = structType.getAllStructFieldTypeInfos();
+			MapWritable map = (MapWritable) data;
+			Text reuse = new Text();
+			for (int index = 0; index < names.size(); index++) {
+				reuse.set(alias.toES(names.get(index)));
+				struct.add(hiveFromWritable(info.get(index), map.get(reuse),
+						alias));
+			}
+			return struct;
+		}
 
-            // return just the values
-            List<Object> struct = new ArrayList<Object>();
+		case UNION: {
+			throw new UnsupportedOperationException("union not yet supported");// break;
+		}
 
-            MapWritable map = (MapWritable) data;
-            Text reuse = new Text();
-            for (int index = 0; index < names.size(); index++) {
-                reuse.set(alias.toES(names.get(index)));
-                struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias));
-            }
-            return struct;
-        }
-
-        case UNION: {
-            throw new UnsupportedOperationException("union not yet supported");//break;
-        }
-
-        case PRIMITIVE:
-        default:
-            // return as is
-            return data;
-        }
-    }
+		case PRIMITIVE:
+		default:
+			// return as is
+			return data;
+		}
+	}
 }
