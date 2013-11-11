@@ -189,7 +189,10 @@ public class ESOutputFormat extends OutputFormat implements
 			resource = settings.getTargetResource();
 			// log.info("before set ,resource = " + resource);
 			String suffix = cfg.get("elasticsearch.suffix.name");
-			settings.setResource(resource + suffix);
+			if (suffix != null) {
+			    settings.setResource(resource + suffix);
+			}
+			//settings.setResource(resource + suffix);
 			// log.info("after set ,resource = " +
 			// settings.getTargetResource());
 

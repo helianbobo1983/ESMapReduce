@@ -46,7 +46,17 @@
 				<attribute name="Class-Path" value="${mf.classpath}" />
 			</manifest>
 		</jar>
-		<!-- <delete dir="${dir.classes}/lib" /> -->
+		<exec executable="${hadoop.bin}">
+			<arg value="fs" />
+			<arg value="-rm" />
+			<arg value="/1.jar" />
+		</exec>
+		<exec executable="${hadoop.bin}">
+			<arg value="fs" />
+			<arg value="-put" />
+			<arg value="${ant.project.name}.jar" />
+			<arg value="/1.jar" />
+		</exec>
 	</target>
 
 	<!-- use run option in order to replace bash script -->

@@ -144,6 +144,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
 	public String getTargetResource() {
 		String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
+		log.info("get target resource = " + getProperty(ES_RESOURCE));
 		return (StringUtils.hasText(targetResource) ? targetResource
 				: StringUtils.hasText(resource) ? resource
 						: getProperty(ES_RESOURCE));

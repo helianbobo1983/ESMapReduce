@@ -64,6 +64,7 @@ public class BufferedRestClient implements Closeable {
 		this.settings = settings;
 		this.client = new RestClient(settings);
 		String tempIndex = settings.getTargetResource();
+		log.info("tempindex = " + tempIndex);
 		// es.resource which index will be located
 		if (tempIndex == null) {
 			tempIndex = "";
