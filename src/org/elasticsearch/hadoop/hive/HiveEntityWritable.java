@@ -26,104 +26,108 @@ import org.apache.hadoop.io.WritableComparator;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
- * Replacement of {@link BytesWritable} that allows direct access to the underlying byte array without copying.
- * Used to wrap already json serialized hive entities.
+ * Replacement of {@link BytesWritable} that allows direct access to the
+ * underlying byte array without copying. Used to wrap already json serialized
+ * hive entities.
  */
-public class HiveEntityWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
+public class HiveEntityWritable extends BinaryComparable implements
+		WritableComparable<BinaryComparable> {
+	private byte[] bytes;
+	private int size;
 
-    private int size;
-    private byte[] bytes;
-    private byte[] id;
-    private int idSize;
+	private byte[] id;
+	private int idSize;
 
-    public HiveEntityWritable() {
-        bytes = null;
-    }
+	public HiveEntityWritable() {
+		bytes = null;
+	}
 
-    public int getLength() {
-        return size + idSize;
-    }
+	public int getLength() {
+		// return size + idSize;
+		return size;
+	}
 
-    public byte[] getBytes() {
-        return bytes;
-    }
+	public byte[] getBytes() {
+		return bytes;
+	}
 
-    public void setContent(byte[] bytes, int size) {
-        this.bytes = bytes;
-        this.size = size;
-    }
+	public void setContent(byte[] bytes, int size) {
+		this.bytes = bytes;
+		this.size = size;
+	}
 
-    public void setId(byte[] id) {
-        this.id = id;
-        this.size += idSize;
-    }
+	public void setId(byte[] id) {
+		// this time, id is copied to elasticSeach source
+		this.id = id;
+		this.idSize = id.length;
+		// this.size += idSize;
+	}
 
-    public byte[] getId() {
-        return id;
-    }
+	public byte[] getId() {
+		return id;
+	}
 
-    // inherit javadoc
-    public void readFields(DataInput in) throws IOException {
-        size = in.readInt();
-        in.readFully(bytes, 0, size);
-        idSize = in.readInt();
-        if (idSize != 0) {
-            in.readFully(id, 0, idSize);
-        }
-    }
+	// don't have effect, we just implement writable interface
+	public void readFields(DataInput in) throws IOException {
+		size = in.readInt();
+		in.readFully(bytes, 0, size);
+		idSize = in.readInt();
+		if (idSize != 0) {
+			in.readFully(id, 0, idSize);
+		}
+	}
 
-    // inherit javadoc
-    public void write(DataOutput out) throws IOException {
-        out.writeInt(size);
-        out.write(bytes, 0, size);
-        out.writeInt(idSize);
-        if (idSize > 0) {
-            out.write(id, 0, idSize);
-        }
-    }
+	// don't have effect, we just implement writable interface
+	public void write(DataOutput out) throws IOException {
+		out.writeInt(size);
+		out.write(bytes, 0, size);
+		out.writeInt(idSize);
+		if (idSize > 0) {
+			out.write(id, 0, idSize);
+		}
+	}
 
-    public int hashCode() {
-        return super.hashCode();
-    }
+	public int hashCode() {
+		return super.hashCode();
+	}
 
-    /**
-     * Are the two byte sequences equal?
-     */
-    public boolean equals(Object right_obj) {
-        if (right_obj instanceof HiveEntityWritable)
-            return super.equals(right_obj);
-        return false;
-    }
+	/**
+	 * Are the two byte sequences equal?
+	 */
+	public boolean equals(Object right_obj) {
+		if (right_obj instanceof HiveEntityWritable)
+			return super.equals(right_obj);
+		return false;
+	}
 
-    /**
-     * Generate the stream of bytes as hex pairs separated by ' '.
-     */
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (idSize > 0) {
-            sb.append("id[");
-            sb.append(new String(id, 0, idSize, StringUtils.UTF_8));
-            sb.append("]=");
-        }
-        sb.append(new String(bytes, 0, size, StringUtils.UTF_8));
-        return sb.toString();
-    }
+	/**
+	 * Generate the stream of bytes as hex pairs separated by ' '.
+	 */
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		if (idSize > 0) {
+			sb.append("id[");
+			sb.append(new String(id, 0, idSize, StringUtils.UTF_8));
+			sb.append("]=");
+		}
+		sb.append(new String(bytes, 0, size, StringUtils.UTF_8));
+		return sb.toString();
+	}
 
+	public static class Comparator extends WritableComparator {
+		public Comparator() {
+			super(HiveEntityWritable.class);
+		}
 
-    public static class Comparator extends WritableComparator {
-        public Comparator() {
-            super(HiveEntityWritable.class);
-        }
+		/**
+		 * Compare the buffers in serialized form.
+		 */
+		public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
+			return compareBytes(b1, s1 + 4, l1 - 4, b2, s2 + 4, l2 - 4);
+		}
+	}
 
-        /**
-         * Compare the buffers in serialized form.
-         */
-        public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-            return compareBytes(b1, s1 + 4, l1 - 4, b2, s2 + 4, l2 - 4);
-        }
-    }
-
-    static { // register this comparator
-        WritableComparator.define(HiveEntityWritable.class, new Comparator());
-    }
+	static { // register this comparator
+		WritableComparator.define(HiveEntityWritable.class, new Comparator());
+	}
 }

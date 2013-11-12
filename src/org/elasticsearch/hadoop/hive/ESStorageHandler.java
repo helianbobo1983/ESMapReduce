@@ -86,19 +86,8 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
 	private void init(TableDesc tableDesc) {
 		Configuration cfg = getConf();
-		FileAppender fa = new FileAppender();
-		fa.setName("FileLogger");
-		fa.setFile("/tmp/hive.log");
-		fa.setLayout(new PatternLayout("%d %-5p [%c{1}] %m%n"));
-		fa.setThreshold(Level.INFO);
-		fa.setAppend(true);
-		fa.activateOptions();
-		// Logger.getRootLogger().getLoggerRepository().resetConfiguration();
-		Logger.getRootLogger().addAppender(fa);
 		Settings settings = SettingsManager.loadFrom(cfg)
 				.merge(tableDesc.getProperties()).clean();
-		
-		
 
 		// NB: ESSerDe is already initialized at this stage
 		// NB: the value writer is not needed by Hive but it's set for

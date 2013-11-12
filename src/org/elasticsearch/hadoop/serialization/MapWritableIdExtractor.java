@@ -22,30 +22,31 @@ import org.elasticsearch.hadoop.cfg.Settings;
 
 public class MapWritableIdExtractor implements IdExtractor, SettingsAware {
 
-    private Text id;
+	private String id;
 
-    @Override
-    public String id(Object target) {
-        if (target instanceof Map) {
-            Map map = (Map) target;
-            Object w = map.get(id);
-            // since keys are likely primitives, just do a toString
-            return (w != null ? w.toString() : null);
-        }
+	@Override
+	public String getIdValue(Object target) {
+		if (target instanceof Map) {
+			Map map = (Map) target;
+			Text text = new Text();
+			text.set(id.getBytes());
+			Object w = map.get(text);
+			// since keys are likely primitives, just do a toString
+			return (w != null ? w.toString() : null);
+		}
 
-        return null;
-    }
-
-    @Override
-    public void setSettings(Settings settings) {
-        id = new Text(settings.getMappingId());
-    }
-
-    @Override
-	public Text getId(Object target) {
-	if (target instanceof Map) {
-	    return id;
+		return null;
 	}
-	return null;
-    }
+
+	@Override
+	public void setSettings(Settings settings) {
+		id = settings.getMappingId();
+	}
+
+	@Override
+	public String getIdFieldName() {
+
+		return id;
+
+	}
 }

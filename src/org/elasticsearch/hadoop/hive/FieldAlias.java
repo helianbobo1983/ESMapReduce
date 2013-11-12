@@ -42,5 +42,5 @@ class FieldAlias {
             hiveToES.put(string, alias);
         }
         return alias;
-    }
+	}
 }

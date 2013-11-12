@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 package org.elasticsearch.hadoop.serialization;
-import org.apache.hadoop.io.Text;
+
+//import org.apache.hadoop.io.Text;
+
 public interface IdExtractor {
 
-    String id(Object target);
-    Text getId(Object target);
+	String getIdValue(Object target);
+
+	String getIdFieldName();
 }

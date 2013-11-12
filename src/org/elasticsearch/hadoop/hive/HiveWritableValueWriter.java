@@ -29,62 +29,67 @@ import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
 
 /**
- * Writer for the Hive specific Writable types (specifically from serde2.io package).
+ * Writer for the Hive specific Writable types (specifically from serde2.io
+ * package).
  */
 public class HiveWritableValueWriter extends WritableValueWriter {
 
-    public HiveWritableValueWriter() {
-        super();
-    }
+	public HiveWritableValueWriter() {
+		super();
+	}
 
-    public HiveWritableValueWriter(boolean writeUnknownTypes) {
-        super(writeUnknownTypes);
-    }
+	public HiveWritableValueWriter(boolean writeUnknownTypes) {
+		super(writeUnknownTypes);
+	}
 
-    @Override
-    public boolean write(Writable writable, Generator generator) {
-        if (writable instanceof ByteWritable) {
-            generator.writeNumber(((ByteWritable) writable).get());
-        }
-        else if (writable instanceof DoubleWritable) {
-            generator.writeNumber(((DoubleWritable) writable).get());
-        }
-        else if (writable instanceof ShortWritable) {
-            generator.writeNumber(((ShortWritable) writable).get());
-        }
-        // HiveDecimal - Hive 0.11+
-        else if (writable != null && HiveConstants.DECIMAL_WRITABLE.equals(writable.getClass().getName())) {
-            generator.writeString(writable.toString());
-        }
-        // pass the UNIX epoch
-        else if (writable instanceof TimestampWritable) {
-            long ts = ((TimestampWritable) writable).getTimestamp().getTime();
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(ts);
-            generator.writeString(DatatypeConverter.printDateTime(cal));
-        }
-        // HiveDate - Hive 0.12+
-        else if (writable != null && HiveConstants.DATE_WRITABLE.equals(writable.getClass().getName())) {
-            generator.writeString(DateWritableWriter.toES(writable));
-        }
-        // HiveVarcharWritable - Hive 0.12+
-        else if (writable != null && HiveConstants.VARCHAR_WRITABLE.equals(writable.getClass().getName())) {
-            generator.writeString(writable.toString());
-        }
-        else {
-            return super.write(writable, generator);
-        }
+	@Override
+	public boolean write(Writable writable, Generator generator) {
+		if (writable instanceof ByteWritable) {
+			generator.writeNumber(((ByteWritable) writable).get());
+		} else if (writable instanceof DoubleWritable) {
+			generator.writeNumber(((DoubleWritable) writable).get());
+		} else if (writable instanceof ShortWritable) {
+			generator.writeNumber(((ShortWritable) writable).get());
+		}
+		// HiveDecimal - Hive 0.11+
+		else if (writable != null
+				&& HiveConstants.DECIMAL_WRITABLE.equals(writable.getClass()
+						.getName())) {
+			generator.writeString(writable.toString());
+		}
+		// pass the UNIX epoch
+		else if (writable instanceof TimestampWritable) {
+			long ts = ((TimestampWritable) writable).getTimestamp().getTime();
+			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(ts);
+			generator.writeString(DatatypeConverter.printDateTime(cal));
+		}
+		// HiveDate - Hive 0.12+
+		else if (writable != null
+				&& HiveConstants.DATE_WRITABLE.equals(writable.getClass()
+						.getName())) {
+			generator.writeString(DateWritableWriter.toES(writable));
+		}
+		// HiveVarcharWritable - Hive 0.12+
+		else if (writable != null
+				&& HiveConstants.VARCHAR_WRITABLE.equals(writable.getClass()
+						.getName())) {
+			generator.writeString(writable.toString());
+		} else {
+			return super.write(writable, generator);
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    // use nested class to efficiently get a hold of the underlying Date object (w/o doing reparsing, etc...)
-    private static abstract class DateWritableWriter {
-        static String toES(Object dateWritable) {
-            DateWritable dw = (DateWritable) dateWritable;
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(dw.get().getTime());
-            return DatatypeConverter.printDate(cal);
-        }
-    }
+	// use nested class to efficiently get a hold of the underlying Date object
+	// (w/o doing reparsing, etc...)
+	private static abstract class DateWritableWriter {
+		static String toES(Object dateWritable) {
+			DateWritable dw = (DateWritable) dateWritable;
+			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(dw.get().getTime());
+			return DatatypeConverter.printDate(cal);
+		}
+	}
 }

@@ -20,42 +20,46 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
 
 public abstract class ObjectUtils {
 
-    @SuppressWarnings("unchecked")
-    public static <T> T instantiate(String className, ClassLoader loader) {
-        Assert.hasText(className, "No class name given");
-        ClassLoader cl = (loader != null ? loader : ObjectUtils.class.getClassLoader());
-        Class<?> clz = null;
-        try {
-            clz = cl.loadClass(className);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(String.format("Cannot load class [%s]", className), e);
-        }
-        try {
-            return (T) clz.newInstance();
-        } catch (Exception e) {
-            throw new IllegalStateException(String.format("Cannot instantiate class [%s]", className), e);
-        }
-    }
+	@SuppressWarnings("unchecked")
+	public static <T> T instantiate(String className, ClassLoader loader) {
+		Assert.hasText(className, "No class name given");
+		ClassLoader cl = (loader != null ? loader : ObjectUtils.class
+				.getClassLoader());
+		Class<?> clz = null;
+		try {
+			clz = cl.loadClass(className);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(String.format(
+					"Cannot load class [%s]", className), e);
+		}
+		try {
+			return (T) clz.newInstance();
+		} catch (Exception e) {
+			throw new IllegalStateException(String.format(
+					"Cannot instantiate class [%s]", className), e);
+		}
+	}
 
-    public static <T> T instantiate(String className, Settings settings) {
-        return instantiate(className, null, settings);
-    }
+	public static <T> T instantiate(String className, Settings settings) {
+		return instantiate(className, null, settings);
+	}
 
-    public static <T> T instantiate(String className, ClassLoader loader, Settings settings) {
-        T obj = instantiate(className, loader);
+	public static <T> T instantiate(String className, ClassLoader loader,
+			Settings settings) {
+		T obj = instantiate(className, loader);
 
-        if (obj instanceof SettingsAware) {
-            ((SettingsAware) obj).setSettings(settings);
-        }
+		if (obj instanceof SettingsAware) {
+			((SettingsAware) obj).setSettings(settings);
+		}
 
-        return obj;
-    }
+		return obj;
+	}
 
-    public static boolean isEmpty(byte[] array) {
-        return (array == null || array.length == 0);
-    }
+	public static boolean isEmpty(byte[] array) {
+		return (array == null || array.length == 0);
+	}
 
-    public static boolean isEmpty(String[] array) {
-        return (array == null || array.length == 0);
-    }
+	public static boolean isEmpty(String[] array) {
+		return (array == null || array.length == 0);
+	}
 }

@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
@@ -50,20 +51,16 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
-
+	private static Log log = LogFactory.getLog(ESSerDe.class);
 	private Properties tableProperties;
-
 	private StructObjectInspector inspector;
-
-	// serialization artifacts
-	private BytesArray scratchPad = new BytesArray(512);
+	private BytesArray scratchPad = new BytesArray(1024);
 	private ValueWriter<HiveType> valueWriter;
 	private HiveType hiveType = new HiveType(null, null);
 	private HiveEntityWritable result = new HiveEntityWritable();
 	private StructTypeInfo structTypeInfo;
 	private FieldAlias alias;
 	private IdExtractor idExtractor;
-
 	private boolean writeInitialized = false;
 
 	@Override
@@ -77,6 +74,7 @@ public class ESSerDe implements SerDe {
 
 	@Override
 	public Object deserialize(Writable blob) throws SerDeException {
+		// read ES record
 		if (blob == null || blob instanceof NullWritable) {
 			return null;
 		}
@@ -103,6 +101,7 @@ public class ESSerDe implements SerDe {
 	@Override
 	public Writable serialize(Object data, ObjectInspector objInspector)
 			throws SerDeException {
+		// insert record to ElasticSearch
 		lazyInitializeWrite();
 
 		// serialize the type directly to json (to avoid converting to Writable
@@ -113,14 +112,15 @@ public class ESSerDe implements SerDe {
 
 		hiveType.setObjectInspector(objInspector);
 		hiveType.setObject(data);
-		ContentBuilder.generate(bos, valueWriter).value(hiveType).flush()
-				.close();
 
-		result.setContent(scratchPad.bytes(), scratchPad.size());
 		if (idExtractor != null) {
-			String id = idExtractor.id(hiveType);
+			String id = idExtractor.getIdValue(hiveType);// get id
 			result.setId(id.getBytes(StringUtils.UTF_8));
 		}
+		ContentBuilder.generate(bos, valueWriter).value(hiveType).flush()
+				.close();
+		result.setContent(scratchPad.bytes(), scratchPad.size());
+		// content is json string ,but id field is trimmed
 		return result;
 	}
 
@@ -129,9 +129,8 @@ public class ESSerDe implements SerDe {
 			return;
 		}
 		writeInitialized = true;
+
 		Settings settings = SettingsManager.loadFrom(tableProperties);
-		// TODO: externalize
-		valueWriter = new HiveValueWriter(alias);
 		InitializationUtils.setIdExtractorIfNotSet(settings,
 				HiveIdExtractor.class, null);
 
@@ -139,6 +138,11 @@ public class ESSerDe implements SerDe {
 				.<IdExtractor> instantiate(
 						settings.getMappingIdExtractorClassName(), settings)
 				: null);
+		if (idExtractor != null)
+			valueWriter = new HiveValueWriter(alias,
+					idExtractor.getIdFieldName());
+		else
+			valueWriter = new HiveValueWriter(alias, "");
 	}
 
 	static Object hiveFromWritable(TypeInfo type, Writable data,

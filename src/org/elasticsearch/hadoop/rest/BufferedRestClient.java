@@ -135,7 +135,7 @@ public class BufferedRestClient implements Closeable {
 		lazyInitWriting();
 
 		objectAlreadySerialized.data = data;
-		objectAlreadySerialized.size = size;
+		objectAlreadySerialized.size = size; // size = data.size
 		objectAlreadySerialized.id = id;
 
 		doWriteToIndex(objectAlreadySerialized);

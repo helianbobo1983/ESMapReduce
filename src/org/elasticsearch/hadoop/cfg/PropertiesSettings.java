@@ -20,24 +20,25 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.util.Assert;
 
 /**
- * Properties-based settings - used for testing or local environments (including Cascading-local).
+ * Properties-based settings - used for testing or local environments (including
+ * Cascading-local).
  */
 public class PropertiesSettings extends Settings {
 
-    protected final Properties props;
+	protected final Properties props;
 
-    public PropertiesSettings(Properties props) {
-        Assert.notNull(props, "Non-null properties expected");
-        this.props = props;
-    }
+	public PropertiesSettings(Properties props) {
+		Assert.notNull(props, "Non-null properties expected");
+		this.props = props;
+	}
 
-    @Override
-    public String getProperty(String name) {
-        return props.getProperty(name);
-    }
+	@Override
+	public String getProperty(String name) {
+		return props.getProperty(name);
+	}
 
-    @Override
-    public void setProperty(String name, String value) {
-        props.setProperty(name, value);
-    }
+	@Override
+	public void setProperty(String name, String value) {
+		props.setProperty(name, value);
+	}
 }
