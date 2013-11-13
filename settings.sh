@@ -9,7 +9,7 @@ curl -XPOST "namenode:9200/$INDEX_NAME/_close?pretty" # close index
 sleep 1
 curl -XPUT "namenode:9200/$INDEX_NAME/_settings?pretty" -d '{
     "index" : {
-       "refresh_interval" : "30s",
+       "refresh_interval" : "40s",
        "index.translog.flush_threshold_ops": "100000",
        "number_of_replicas" : 0
     }

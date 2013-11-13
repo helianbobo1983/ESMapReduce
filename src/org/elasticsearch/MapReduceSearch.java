@@ -27,7 +27,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.mr.WritableValueWriter;
+import org.elasticsearch.hadoop.mr.MapReduceWriter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.MapWritableIdExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
@@ -117,7 +117,7 @@ public class MapReduceSearch extends Configured implements Tool {
 
 		Settings settings = SettingsManager.loadFrom(conf);
 		SerializationUtils.setValueWriterIfNotSet(settings,
-				WritableValueWriter.class, log);
+				MapReduceWriter.class, log);
 		InitializationUtils.setIdExtractorIfNotSet(settings,
 				MapWritableIdExtractor.class, log);
 
@@ -145,7 +145,7 @@ public class MapReduceSearch extends Configured implements Tool {
 
 	public static void main(String[] args) throws Exception {
 
-		DOMConfigurator.configure("conf/log4j.xml");
+		//DOMConfigurator.configure("conf/log4j.xml");
 		int ret = ToolRunner.run(new MapReduceSearch(), args);
 
 		// log.info("");

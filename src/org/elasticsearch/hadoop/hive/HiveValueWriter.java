@@ -39,7 +39,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
 	private final boolean writeUnknownTypes;
 	private final ValueWriter<Writable> writableWriter;
 	private final FieldAlias alias;
-	private final String idField;
+	private final String idFieldName;
 
 	public HiveValueWriter() {
 		this(new FieldAlias(), "");
@@ -49,7 +49,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
 		this.writeUnknownTypes = false;
 		this.writableWriter = new HiveWritableValueWriter(false);
 		this.alias = alias;
-		this.idField = idFieldName.toLowerCase();
+		this.idFieldName = idFieldName.toLowerCase();
 	}
 
 	@Override
@@ -114,12 +114,11 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
 
 			generator.writeBeginObject();
 			for (StructField structField : refs) {
-
-				String field = alias.toES(structField.getFieldName())
+				String esfield = alias.toES(structField.getFieldName())
 						.toLowerCase();
 				// if (field != this.idField) { // don't write id field
-				if (!this.idField.equals(field)) { // don't write id field
-					generator.writeFieldName(field);
+				if (!idFieldName.equals(esfield)) { // don't write id field
+					generator.writeFieldName(esfield);
 					if (!write(soi.getStructFieldData(data, structField),
 							structField.getFieldObjectInspector(), generator)) {
 						return false;

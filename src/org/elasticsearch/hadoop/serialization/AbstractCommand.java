@@ -90,9 +90,8 @@ abstract class AbstractCommand implements Command {
 			} else {
 				String str = idExtractor.getIdFieldName();
 				Text key = new Text(str.getBytes());
-				// log.info("key = " + key.toString());
 				if ((key != null) && (object instanceof Map)) {
-					Map map = (Map) object;
+					Map<?, ?> map = (Map<?, ?>) object;
 					map.remove(key);
 				}
 				serialize(object);

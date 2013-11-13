@@ -57,10 +57,8 @@ public class HiveEntityWritable extends BinaryComparable implements
 	}
 
 	public void setId(byte[] id) {
-		// this time, id is copied to elasticSeach source
 		this.id = id;
 		this.idSize = id.length;
-		// this.size += idSize;
 	}
 
 	public byte[] getId() {

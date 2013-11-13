@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.Map;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;

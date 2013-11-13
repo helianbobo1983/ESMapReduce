@@ -56,7 +56,7 @@ public class ESSerDe implements SerDe {
 	private StructObjectInspector inspector;
 	private BytesArray scratchPad = new BytesArray(1024);
 	private ValueWriter<HiveType> valueWriter;
-	private HiveType hiveType = new HiveType(null, null);
+	private HiveType hiveData = new HiveType(null, null);
 	private HiveEntityWritable result = new HiveEntityWritable();
 	private StructTypeInfo structTypeInfo;
 	private FieldAlias alias;
@@ -110,17 +110,17 @@ public class ESSerDe implements SerDe {
 		FastByteArrayOutputStream bos = new FastByteArrayOutputStream(
 				scratchPad);
 
-		hiveType.setObjectInspector(objInspector);
-		hiveType.setObject(data);
+		hiveData.setObjectInspector(objInspector);
+		hiveData.setObject(data);
 
 		if (idExtractor != null) {
-			String id = idExtractor.getIdValue(hiveType);// get id
+			String id = idExtractor.getIdValue(hiveData);// get id
 			result.setId(id.getBytes(StringUtils.UTF_8));
 		}
-		ContentBuilder.generate(bos, valueWriter).value(hiveType).flush()
+		ContentBuilder.generate(bos, valueWriter).value(hiveData).flush()
 				.close();
 		result.setContent(scratchPad.bytes(), scratchPad.size());
-		// content is json string ,but id field is trimmed
+		// content is json string , and id field is trimmed
 		return result;
 	}
 

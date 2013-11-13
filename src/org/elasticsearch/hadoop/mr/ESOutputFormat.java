@@ -182,7 +182,7 @@ public class ESOutputFormat extends OutputFormat implements
 			}
 			Settings settings = SettingsManager.loadFrom(cfg);
 			SerializationUtils.setValueWriterIfNotSet(settings,
-					WritableValueWriter.class, log);
+					MapReduceWriter.class, log);
 			InitializationUtils.setIdExtractorIfNotSet(settings,
 					MapWritableIdExtractor.class, log);
 			client = new BufferedRestClient(settings);
@@ -190,9 +190,9 @@ public class ESOutputFormat extends OutputFormat implements
 			// log.info("before set ,resource = " + resource);
 			String suffix = cfg.get("elasticsearch.suffix.name");
 			if (suffix != null) {
-			    settings.setResource(resource + suffix);
+				settings.setResource(resource + suffix);
 			}
-			//settings.setResource(resource + suffix);
+			// settings.setResource(resource + suffix);
 			// log.info("after set ,resource = " +
 			// settings.getTargetResource());
 
@@ -223,7 +223,7 @@ public class ESOutputFormat extends OutputFormat implements
 			Shard chosenShard = orderedShards.get(bucket);
 			Node targetNode = targetShards.get(chosenShard);
 
-			log.info("target node name = " + targetNode.getName());
+			//log.info("target node name = " + targetNode.getName());
 
 			client.close();
 			// override the global settings to communicate directly with the
@@ -348,7 +348,6 @@ public class ESOutputFormat extends OutputFormat implements
 				"No resource ['%s'] (index/query/location) specified",
 				ES_RESOURCE));
 
-		// lazy-init
 		BufferedRestClient client = null;
 
 		InitializationUtils.checkIdForOperation(settings);
